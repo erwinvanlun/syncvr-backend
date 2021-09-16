@@ -1,6 +1,4 @@
-export interface SvEnvironment {
+export interface SvBEEnvironment {
   production: boolean;
-  defaultLanguage: string;
-  availableLanguages: string[];
-  fibonacciEndPoint: string;
+  port: number;
 }
