@@ -1,6 +1,5 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
-import {APIFibonacciResultCodes} from "syncvr/dist/validation-codes";
-import {APIFibonacciNumberMeta} from "syncvr";
+import {APIFibonacciHistoryResponse, APIFibonacciNumberMeta, APIFibonacciResultCodes} from "syncvr";
 
 @Injectable()
 export class FibonacciService {
@@ -113,7 +112,7 @@ export class FibonacciService {
         return this.sequence[num] = newNum;
     }
 
-    getHistory(): APIFibonacciNumberMeta[] {
+    getHistory(): APIFibonacciHistoryResponse {
         let historyElement: APIFibonacciNumberMeta =
             {
                 requestId: ++this.lastRequest,
@@ -123,7 +122,8 @@ export class FibonacciService {
                 fibonacci: 24
             };
         this.requests.unshift(historyElement);
-        return this.requests;
+
+        return {history: this.requests, resultCode: APIFibonacciResultCodes.OK};
     }
 }
 
