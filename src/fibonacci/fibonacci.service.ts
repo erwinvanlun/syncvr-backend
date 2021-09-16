@@ -1,27 +1,63 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import {APIFibonacciResultCodes} from "syncvr/dist/validation-codes";
+import {APIFibonacciNumberMeta} from "syncvr";
 
 @Injectable()
 export class FibonacciService {
-    async getNumber$(no: string): Promise<number> {
-        console.log('getting number for ' + no);
-        console.log('typeof no is nu ' + typeof(no));
-
-        const f = this.get_fibonacci(no);
-        console.log('calculated fibo on backend is ' + f);
+    async getNumber$(no: string, ip: string): Promise<number> {
+        const f = this.get_fibonacci(no, ip);
+        console.log('calculated fibo for ' + no + 'on backend is ' + f);
         return f;
     }
 
- //   stubResponse: FibonacciNumberResponse[] = [];
+    lastRequest: number = 7;
+    requests: APIFibonacciNumberMeta[] = [
+        {
+            requestId: 7,
+            timestamp: "timestamp",
+            ipAddress: "ip",
+            number: 5,
+            fibonacci: 24
+        },
+        {
+            requestId: 6,
+            timestamp: "timestamp",
+            ipAddress: "ip",
+            number: 5,
+            fibonacci: 24
+        },
+        {
+            requestId: 6,
+            timestamp: "timestamp",
+            ipAddress: "ip",
+            number: 5,
+            fibonacci: 24
+        },
+        {
+            requestId: 5,
+            timestamp: "timestamp",
+            ipAddress: "ip",
+            number: 5,
+            fibonacci: 24
+        },
+        {
+            requestId: 4,
+            timestamp: "timestamp",
+            ipAddress: "ip",
+            number: 5,
+            fibonacci: 24
+        }
+
+    ];
 
     private sequence: number[] = [];
 
-    private get_fibonacci(no: string): number {
+    private get_fibonacci(no: string, ip: string): number {
         let num = Number(no);
         if (num.toString() !== no) throw new HttpException({
             status: HttpStatus.BAD_REQUEST,
             error: APIFibonacciResultCodes.NotNumeric,
-        }, HttpStatus.FORBIDDEN);
+        }, HttpStatus.FORBIDDEN); // todo: forbidden is actually not the correct error code
         if (num < 0) throw new HttpException({
             status: HttpStatus.BAD_REQUEST,
             error: APIFibonacciResultCodes.Negative,
@@ -31,7 +67,21 @@ export class FibonacciService {
             error: APIFibonacciResultCodes.NonInteger,
         }, HttpStatus.FORBIDDEN);
 
-        return this.fibonacci(Number(no)); // number conversion is necessary as it appears that
+        let fibonacciResult = this.fibonacci(Number(no)); // number conversion is necessary as it appears that
+
+        // store in request history, convert ip address to localhost
+        let meta: APIFibonacciNumberMeta;
+        meta =
+            {
+                requestId: ++this.lastRequest,
+                timestamp: "timestamp",
+                ipAddress: ip == '::1' ? 'localhost' : ip,
+                number: Number(no),
+                fibonacci: fibonacciResult
+            };
+        this.requests.unshift(meta);
+
+        return fibonacciResult;
     }
 
     private fibonacci(num: number): number {
@@ -39,13 +89,12 @@ export class FibonacciService {
         if (this.sequence[num]) return this.sequence[num];
         if (num <= 1) return 1;
 
-        let partialResult: number[] = [0,0];
+        let partialResult: number[] = [0, 0];
 
         [-1, -2].forEach((r, i) => {
             try {
                 partialResult[i] = this.fibonacci(num + r);
-            }
-            catch(e){
+            } catch (e) {
                 throw new HttpException({
                     status: HttpStatus.BAD_REQUEST,
                     error: APIFibonacciResultCodes.ToLarge,
@@ -64,67 +113,33 @@ export class FibonacciService {
         return this.sequence[num] = newNum;
     }
 
-    // private getHistory (){
-    //     this.stubResponse = [
-    //         {
-    //             requestId: 7,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         },
-    //         {
-    //             requestId: 6,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         },
-    //         {
-    //             requestId: 6,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         },
-    //         {
-    //             requestId: 5,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         },
-    //         {
-    //             requestId: 4,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         }
-    //
-    //     ];
-    //
-    //     let requestId = 8;
-    //     let historyElement: FibonacciNumberResponse =
-    //         {requestId: 7,
-    //             timestamp: "timestamp",
-    //             ipAddress: "ip",
-    //             number: 5,
-    //             fibonacci: 24
-    //         };
-    //
-    //     let ReturnValue = of(this.stubResponse);
-    //     setInterval(()=>{
-    //         this.stubResponse.unshift({...historyElement, requestId: requestId++} );
-    //         console.log(this.stubResponse);
-    //         ReturnValue.next();
-    //
-    //     }, 2000);
-    //
-    // }
+    getHistory(): APIFibonacciNumberMeta[] {
+        let historyElement: APIFibonacciNumberMeta =
+            {
+                requestId: ++this.lastRequest,
+                timestamp: "timestamp",
+                ipAddress: "ip",
+                number: 5,
+                fibonacci: 24
+            };
+        this.requests.unshift(historyElement);
+        return this.requests;
+    }
 }
 
 
-// helpers
+// helpers fibonacci
 export type Int = number & { __int__: void };
 export const checkIsInt = (num: number): num is Int => num % 1 === 0;
+
+// helpers history
+const generateRandomDOB = (): string => {
+    const random = getRandomDate(new Date('1950-02-12T01:57:45.271Z'), new Date('2001-02-12T01:57:45.271Z'))
+    return random.toISOString();
+}
+
+function getRandomDate(from: Date, to: Date) {
+    const fromTime = from.getTime();
+    const toTime = to.getTime();
+    return new Date(fromTime + Math.random() * (toTime - fromTime));
+}
