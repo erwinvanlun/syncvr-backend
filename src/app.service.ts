@@ -3,6 +3,6 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class AppService {
   getHello(): string {
-    return 'SyncVR API works!';
+    return 'SyncVR API Server works!';
   }
 }
