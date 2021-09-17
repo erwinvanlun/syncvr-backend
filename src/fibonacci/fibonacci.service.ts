@@ -5,6 +5,8 @@ import {
     APIFibonacciNumberRequestResponse,
     APIFibonacciResultCodes
 } from "syncvr";
+import {environment} from "../environments/environment";
+import {timer} from "rxjs";
 
 @Injectable()
 export class FibonacciService {
@@ -14,6 +16,7 @@ export class FibonacciService {
 
     constructor() {
         this.generateDummyRequests(100);
+        timer(1, environment.dummyHistoryIntervalInSeconds * 1000).subscribe(() => this.generateDummyRequests(1));
     }
 
     private lastRequest: number = 0;
@@ -84,17 +87,16 @@ export class FibonacciService {
     }
 
     getHistory(): APIFibonacciHistoryResponse {
-        this.generateDummyRequests(1);
-
         return {history: this.requests, resultCode: APIFibonacciResultCodes.OK};
     }
 
     generateDummyRequests(numberOfDummyRequests: number) {
         const lastRequestToAdd = this.lastRequest + numberOfDummyRequests;
         for (this.lastRequest++; this.lastRequest <= lastRequestToAdd; ++this.lastRequest) {
-            const number = Math.floor(Math.random() * 40);
+            const number = Math.floor(Math.random() * 40); // max number assumed to be 40
             let timestamp = new Date();
-            timestamp.setSeconds(timestamp.getSeconds() - (Math.floor(Math.random() * this.lastRequest * 10)));
+            // single dummy request are considered to have timestamp 'now'
+            if (numberOfDummyRequests !== 1) {timestamp.setSeconds(timestamp.getSeconds() - (Math.floor(Math.random() * this.lastRequest * 10)));}
             const dummyRequest: APIFibonacciNumberMeta = {
                 requestId: this.lastRequest,
                 number: number,
@@ -114,15 +116,3 @@ export class FibonacciService {
 // helpers fibonacci
 export type Int = number & { __int__: void };
 export const checkIsInt = (num: number): num is Int => num % 1 === 0;
-
-// helpers history
-const generateRandomDOB = (): string => {
-    const random = getRandomDate(new Date('1950-02-12T01:57:45.271Z'), new Date('2001-02-12T01:57:45.271Z'))
-    return random.toISOString();
-}
-
-function getRandomDate(from: Date, to: Date) {
-    const fromTime = from.getTime();
-    const toTime = to.getTime();
-    return new Date(fromTime + Math.random() * (toTime - fromTime));
-}
