@@ -2,13 +2,15 @@ import {Controller, Get, Header, Param} from '@nestjs/common';
 import {IpAddress} from 'src/lib/decorators/request-ip';
 import {FibonacciService} from "./fibonacci.service";
 import {RealIP} from 'nestjs-real-ip';
+// @ts-ignore: todo actually this is exported, don't understand the TS error message
+import {APIFibonacci} from "syncvr";
 
-@Controller('fibonacci')
+@Controller(APIFibonacci.base)
 export class FibonacciController {
     constructor(private service: FibonacciService) {
     }
 
-    @Get('/history') // todo: centralise these url in StackLib
+    @Get('/' + APIFibonacci.history)
     @Header('Access-Control-Allow-Origin', '*') // necessary?
     @Header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT') // necessary?
     getHistory() {
@@ -24,7 +26,7 @@ export class FibonacciController {
         return ip == '::1' ? 'localhost' : ip;
     }
 
-    @Get(':number')
+    @Get(APIFibonacci.calc + ':number') // todo this actually doesn't work when calc differs from ''
     @Header('Access-Control-Allow-Origin', '*') // necessary?
     @Header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT') // necessary?
     getNumber(@Param() params, @RealIP() ip: string) { // implicit any, don't like it
