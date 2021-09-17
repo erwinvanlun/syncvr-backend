@@ -9,46 +9,13 @@ export class FibonacciService {
         return f;
     }
 
-    lastRequest: number = 7;
-    requests: APIFibonacciNumberMeta[] = [
-        {
-            requestId: 7,
-            timestamp: "timestamp",
-            ipAddress: "ip",
-            number: 5,
-            fibonacci: 24
-        },
-        {
-            requestId: 6,
-            timestamp: "timestamp",
-            ipAddress: "ip",
-            number: 5,
-            fibonacci: 24
-        },
-        {
-            requestId: 6,
-            timestamp: "timestamp",
-            ipAddress: "ip",
-            number: 5,
-            fibonacci: 24
-        },
-        {
-            requestId: 5,
-            timestamp: "timestamp",
-            ipAddress: "ip",
-            number: 5,
-            fibonacci: 24
-        },
-        {
-            requestId: 4,
-            timestamp: "timestamp",
-            ipAddress: "ip",
-            number: 5,
-            fibonacci: 24
-        }
+    constructor() {
+        console.log('constructor of fib service');
+        this.loadDummyRequests();
+    }
 
-    ];
-
+    private lastRequest: number = 0;
+    private requests: APIFibonacciNumberMeta[] = [];
     private sequence: number[] = [];
 
     private get_fibonacci(no: string, ip: string): number {
@@ -125,8 +92,30 @@ export class FibonacciService {
 
         return {history: this.requests, resultCode: APIFibonacciResultCodes.OK};
     }
-}
 
+    loadDummyRequests() {
+        const dummyRequests = 100;
+        let now: Date = new Date();
+        const nowInSeconds = now.getSeconds();
+
+        for (this.lastRequest = 1; this.lastRequest <= dummyRequests; this.lastRequest++) {
+            const number = Math.floor(Math.random() * 40);
+            let timestamp = new Date();
+            timestamp.setSeconds(timestamp.getSeconds() - (Math.floor(Math.random() * this.lastRequest * 10)));
+            const dummyRequest: APIFibonacciNumberMeta = {
+                requestId: this.lastRequest,
+                number: number,
+                fibonacci: this.fibonacci(number),
+                ipAddress: Math.floor(Math.random() * 256).toString() + '.'
+                    + Math.floor(Math.random() * 256).toString() + '.' +
+                    +Math.floor(Math.random() * 256).toString() + '.' +
+                    +Math.floor(Math.random() * 256).toString(), // todo could probably be optimized
+                timestamp: timestamp.toString()
+            }
+            this.requests.unshift(dummyRequest);
+        }
+    }
+}
 
 // helpers fibonacci
 export type Int = number & { __int__: void };
