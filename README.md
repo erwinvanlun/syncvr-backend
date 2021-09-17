@@ -13,5 +13,7 @@ your API will be available at the endpoint configured in
 - Working with NestJS
 
 ## Possible new features
-- database connection 
-- 
+- database connection
+
+## To Research
+- hot reload on changes in editor.
