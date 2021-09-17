@@ -1,10 +1,15 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
-import {APIFibonacciHistoryResponse, APIFibonacciNumberMeta, APIFibonacciResultCodes} from "syncvr";
+import {
+    APIFibonacciHistoryResponse,
+    APIFibonacciNumberMeta,
+    APIFibonacciNumberRequestResponse,
+    APIFibonacciResultCodes
+} from "syncvr";
 
 @Injectable()
 export class FibonacciService {
-    async getFibonacci$(no: string, ip: string): Promise<number> {
-        return this.getFibonacci(no, ip); // actually I wanted something like this: validate().calc().store()
+    async getFibonacci$(no: string, ip: string): Promise<APIFibonacciNumberRequestResponse> {
+        return this.getFibonacci(no, ip); // todo actually I wanted something like this: validate().calc().store()
     }
 
     constructor() {
@@ -13,9 +18,10 @@ export class FibonacciService {
 
     private lastRequest: number = 0;
     private requests: APIFibonacciNumberMeta[] = [];
-    private sequence: number[] = [];
+    private calculations: number[] = [];
 
-    private getFibonacci(no: string, ip: string): number {
+    private getFibonacci(no: string, ip: string): APIFibonacciNumberRequestResponse {
+        // todo: validate first, can't we share this with frontend?
         let num = Number(no);
         if (num.toString() !== no) throw new HttpException({
             status: HttpStatus.BAD_REQUEST,
@@ -30,12 +36,13 @@ export class FibonacciService {
             error: APIFibonacciResultCodes.NonInteger,
         }, HttpStatus.FORBIDDEN);
 
+        // the actual calculation
         let fibonacciResult = this.calcFibonacci(Number(no)); // number conversion is necessary as it appears that
 
         // store in request history, convert ip address to localhost
-        let meta: APIFibonacciNumberMeta;
+        let result: APIFibonacciNumberMeta;
         const timestamp = new Date();
-        meta =
+        result =
             {
                 requestId: ++this.lastRequest,
                 timestamp: timestamp.toString(),
@@ -43,14 +50,13 @@ export class FibonacciService {
                 number: Number(no),
                 fibonacci: fibonacciResult
             };
-        this.requests.unshift(meta);
+        this.requests.unshift(result);
 
-        return fibonacciResult;
+        return {result: result, resultCode: APIFibonacciResultCodes.OK}
     }
 
     private calcFibonacci(num: number): number {
-
-        if (this.sequence[num]) return this.sequence[num];
+        if (this.calculations[num]) return this.calculations[num];
         if (num <= 1) return 1;
 
         let partialResult: number[] = [0, 0];
@@ -74,7 +80,7 @@ export class FibonacciService {
                 error: APIFibonacciResultCodes.ToLarge,
             }, HttpStatus.FORBIDDEN);
         }
-        return this.sequence[num] = newNum;
+        return this.calculations[num] = newNum;
     }
 
     getHistory(): APIFibonacciHistoryResponse {
