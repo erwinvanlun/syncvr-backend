@@ -14,8 +14,6 @@ export class FibonacciController {
     @Header('Access-Control-Allow-Origin', '*') // necessary?
     @Header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT') // necessary?
     getHistory() {
-        console.log('in getHistory!');
-
         return this.service.getHistory();
     }
 
@@ -29,8 +27,8 @@ export class FibonacciController {
     @Get(APIFibonacci.calc + ':number') // todo this actually doesn't work when calc differs from ''
     @Header('Access-Control-Allow-Origin', '*') // necessary?
     @Header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT') // necessary?
-    getNumber(@Param() params, @RealIP() ip: string) { // implicit any, don't like it
-        return this.service.getNumber$(params.number, ip);
+    getFibonacci(@Param() params, @RealIP() ip: string) { // implicit any, don't like it
+        return this.service.getFibonacci$(params.number, ip);
     };
 
     @Get()

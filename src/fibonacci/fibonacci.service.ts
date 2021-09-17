@@ -3,22 +3,19 @@ import {APIFibonacciHistoryResponse, APIFibonacciNumberMeta, APIFibonacciResultC
 
 @Injectable()
 export class FibonacciService {
-    async getNumber$(no: string, ip: string): Promise<number> {
-        const f = this.get_fibonacci(no, ip);
-        console.log('calculated fibo for ' + no + 'on backend is ' + f);
-        return f;
+    async getFibonacci$(no: string, ip: string): Promise<number> {
+        return this.getFibonacci(no, ip); // actually I wanted something like this: validate().calc().store()
     }
 
     constructor() {
-        console.log('constructor of fib service');
-        this.loadDummyRequests();
+        this.generateDummyRequests(100);
     }
 
     private lastRequest: number = 0;
     private requests: APIFibonacciNumberMeta[] = [];
     private sequence: number[] = [];
 
-    private get_fibonacci(no: string, ip: string): number {
+    private getFibonacci(no: string, ip: string): number {
         let num = Number(no);
         if (num.toString() !== no) throw new HttpException({
             status: HttpStatus.BAD_REQUEST,
@@ -33,14 +30,15 @@ export class FibonacciService {
             error: APIFibonacciResultCodes.NonInteger,
         }, HttpStatus.FORBIDDEN);
 
-        let fibonacciResult = this.fibonacci(Number(no)); // number conversion is necessary as it appears that
+        let fibonacciResult = this.calcFibonacci(Number(no)); // number conversion is necessary as it appears that
 
         // store in request history, convert ip address to localhost
         let meta: APIFibonacciNumberMeta;
+        const timestamp = new Date();
         meta =
             {
                 requestId: ++this.lastRequest,
-                timestamp: "timestamp",
+                timestamp: timestamp.toString(),
                 ipAddress: ip == '::1' ? 'localhost' : ip,
                 number: Number(no),
                 fibonacci: fibonacciResult
@@ -50,7 +48,7 @@ export class FibonacciService {
         return fibonacciResult;
     }
 
-    private fibonacci(num: number): number {
+    private calcFibonacci(num: number): number {
 
         if (this.sequence[num]) return this.sequence[num];
         if (num <= 1) return 1;
@@ -59,7 +57,7 @@ export class FibonacciService {
 
         [-1, -2].forEach((r, i) => {
             try {
-                partialResult[i] = this.fibonacci(num + r);
+                partialResult[i] = this.calcFibonacci(num + r);
             } catch (e) {
                 throw new HttpException({
                     status: HttpStatus.BAD_REQUEST,
@@ -80,32 +78,21 @@ export class FibonacciService {
     }
 
     getHistory(): APIFibonacciHistoryResponse {
-        let historyElement: APIFibonacciNumberMeta =
-            {
-                requestId: ++this.lastRequest,
-                timestamp: "timestamp",
-                ipAddress: "ip",
-                number: 5,
-                fibonacci: 24
-            };
-        this.requests.unshift(historyElement);
+        this.generateDummyRequests(1);
 
         return {history: this.requests, resultCode: APIFibonacciResultCodes.OK};
     }
 
-    loadDummyRequests() {
-        const dummyRequests = 100;
-        let now: Date = new Date();
-        const nowInSeconds = now.getSeconds();
-
-        for (this.lastRequest = 1; this.lastRequest <= dummyRequests; this.lastRequest++) {
+    generateDummyRequests(numberOfDummyRequests: number) {
+        const lastRequestToAdd = this.lastRequest + numberOfDummyRequests;
+        for (this.lastRequest++; this.lastRequest <= lastRequestToAdd; ++this.lastRequest) {
             const number = Math.floor(Math.random() * 40);
             let timestamp = new Date();
             timestamp.setSeconds(timestamp.getSeconds() - (Math.floor(Math.random() * this.lastRequest * 10)));
             const dummyRequest: APIFibonacciNumberMeta = {
                 requestId: this.lastRequest,
                 number: number,
-                fibonacci: this.fibonacci(number),
+                fibonacci: this.calcFibonacci(number),
                 ipAddress: Math.floor(Math.random() * 256).toString() + '.'
                     + Math.floor(Math.random() * 256).toString() + '.' +
                     +Math.floor(Math.random() * 256).toString() + '.' +
@@ -114,6 +101,7 @@ export class FibonacciService {
             }
             this.requests.unshift(dummyRequest);
         }
+        this.lastRequest--; // fix
     }
 }
 
