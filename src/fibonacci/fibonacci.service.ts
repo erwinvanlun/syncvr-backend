@@ -15,7 +15,7 @@ export class FibonacciService {
     }
 
     constructor() {
-        this.generateDummyRequests(100);
+        this.generateDummyRequests(environment.dummyHistorySize);
         timer(1, environment.dummyHistoryIntervalInSeconds * 1000).subscribe(() => this.generateDummyRequests(1));
     }
 
