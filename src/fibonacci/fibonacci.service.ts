@@ -77,7 +77,6 @@ export class FibonacciService {
 
         const newNum = partialResult[0] + partialResult[1];
         if (newNum === Infinity) {
-            console.log('too large');
             throw new HttpException({
                 status: HttpStatus.BAD_REQUEST,
                 error: APIFibonacciResultCodes.ToLarge,
@@ -92,27 +91,36 @@ export class FibonacciService {
 
     generateDummyRequests(numberOfDummyRequests: number) {
         const lastRequestToAdd = this.lastRequest + numberOfDummyRequests;
-        for (this.lastRequest++; this.lastRequest <= lastRequestToAdd; ++this.lastRequest) {
-            const number = Math.floor(Math.random() * 40); // max number assumed to be 40
+        const intervalInSec = 10;
+        for (let r = 1; r <= numberOfDummyRequests; r++) {
+            const numberInput = Math.floor(Math.random() * 40); // max n for Fn assumed to be 40
             let timestamp = new Date();
-            // single dummy request are considered to have timestamp 'now'
-            if (numberOfDummyRequests !== 1) {timestamp.setSeconds(timestamp.getSeconds() - (Math.floor(Math.random() * this.lastRequest * 10)));}
+            let subtractInTime = 0;
+            if (numberOfDummyRequests == 1) {
+                subtractInTime = 0; // just now
+            } else {
+                subtractInTime = r * intervalInSec + Math.floor(intervalInSec * (r - .5 + Math.random()));
+            }
+            timestamp.setSeconds(timestamp.getSeconds() - subtractInTime)
+
             const dummyRequest: APIFibonacciNumberMeta = {
-                requestId: this.lastRequest,
-                number: number,
-                fibonacci: this.calcFibonacci(number),
-                ipAddress: Math.floor(Math.random() * 256).toString() + '.'
-                    + Math.floor(Math.random() * 256).toString() + '.' +
-                    +Math.floor(Math.random() * 256).toString() + '.' +
-                    +Math.floor(Math.random() * 256).toString(), // todo could probably be optimized
+                requestId: r + this.lastRequest,
+                number: numberInput,
+                fibonacci: this.calcFibonacci(numberInput),
+                ipAddress: randomInt(256) + '.' + randomInt(256) + '.' + randomInt(256) + '.' + randomInt(256),
                 timestamp: timestamp.toString()
             }
             this.requests.unshift(dummyRequest);
         }
-        this.lastRequest--; // fix
+        this.lastRequest+= numberOfDummyRequests;
     }
 }
 
 // helpers fibonacci
-export type Int = number & { __int__: void };
-export const checkIsInt = (num: number): num is Int => num % 1 === 0;
+type Int = number & { __int__: void };
+const checkIsInt = (num: number): num is Int => num % 1 === 0;
+
+// helpers history
+function randomInt(n: number): string {
+    return Math.floor(Math.random() * n).toString();
+}
