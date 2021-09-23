@@ -1,5 +1,6 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import {
+    APIFibonacciHistoryRequest,
     APIFibonacciHistoryResponse,
     APIFibonacciNumberMeta,
     APIFibonacciNumberRequestResponse,
@@ -14,6 +15,9 @@ export class FibonacciService {
         return this.getFibonacci(no, ip); // todo actually I wanted something like this: validate().calc().store()
     }
 
+    async getHistory$(request: APIFibonacciHistoryRequest): Promise<APIFibonacciHistoryResponse> {
+        return this.getHistory(request); // todo actually I wanted something like this: validate().calc().store()
+    }
     constructor() {
         this.generateDummyRequests(environment.dummyHistorySize);
         timer(1, environment.dummyHistoryIntervalInSeconds * 1000).subscribe(() => this.generateDummyRequests(1));
@@ -85,10 +89,6 @@ export class FibonacciService {
         return this.calculations[num] = newNum;
     }
 
-    getHistory(): APIFibonacciHistoryResponse {
-        return {history: this.requests, resultCode: APIFibonacciResultCodes.OK};
-    }
-
     generateDummyRequests(numberOfDummyRequests: number) {
         const lastRequestToAdd = this.lastRequest + numberOfDummyRequests;
         const intervalInSec = 10;
@@ -113,6 +113,13 @@ export class FibonacciService {
             this.requests.unshift(dummyRequest);
         }
         this.lastRequest+= numberOfDummyRequests;
+    }
+
+    // actually a Post request. How to name?
+    getHistory(request: APIFibonacciHistoryRequest): APIFibonacciHistoryResponse {
+        request.range.before;
+        const filtered = this.requests.filter ( r => (r.requestId > request.range.after || r.requestId < request.range.before));
+        return {history: filtered, resultCode: APIFibonacciResultCodes.OK};
     }
 }
 

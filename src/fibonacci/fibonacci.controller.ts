@@ -1,9 +1,9 @@
-import {Controller, Get, Header, Param} from '@nestjs/common';
+import {Body, Controller, Get, Header, Param, Post, Req, Request} from '@nestjs/common';
 import {IpAddress} from 'src/lib/decorators/request-ip';
 import {FibonacciService} from "./fibonacci.service";
 import {RealIP} from 'nestjs-real-ip';
 // @ts-ignore: todo actually this is exported, don't understand the TS error message
-import {APIFibonacci} from "syncvr";
+import {APIFibonacci, APIFibonacciHistoryRequest} from "syncvr";
 
 @Controller(APIFibonacci.base)
 export class FibonacciController {
@@ -11,10 +11,15 @@ export class FibonacciController {
     }
 
     @Get('/' + APIFibonacci.history)
-    @Header('Access-Control-Allow-Origin', '*') // necessary?
-    @Header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,DELETE,PUT') // necessary?
     getHistory() {
-        return this.service.getHistory();
+        // function for API browser testing, simply show them all
+        return this.service.getHistory$({range: {after: 0, before: Infinity}});
+    }
+
+    // actually this is not a post, but a way to pass parameters for payload.
+    @Post('/' + APIFibonacci.history)
+     postHistory(@Body() request: APIFibonacciHistoryRequest) {
+        return this.service.getHistory$(request);
     }
 
     @Get('my-ip') // client tool to determine own ip address
