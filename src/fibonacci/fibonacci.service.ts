@@ -18,6 +18,7 @@ export class FibonacciService {
     async getHistory$(request: APIFibonacciHistoryRequest): Promise<APIFibonacciHistoryResponse> {
         return this.getHistory(request); // todo actually I wanted something like this: validate().calc().store()
     }
+
     constructor() {
         this.generateDummyRequests(environment.dummyHistorySize);
         timer(1, environment.dummyHistoryIntervalInSeconds * 1000).subscribe(() => this.generateDummyRequests(1));
@@ -112,14 +113,41 @@ export class FibonacciService {
             }
             this.requests.unshift(dummyRequest);
         }
-        this.lastRequest+= numberOfDummyRequests;
+        this.lastRequest += numberOfDummyRequests;
     }
 
     // actually a Post request. How to name?
+    /*
+    ** assume lastRequest - 17
+    *  head, tail, maxTail
+    *   0     0       5   -> first timer, just return 5 last rows 17 - 13
+    *   14    10,     5   -> return last request 17 - 15 and add to tail 9 - 5
+    *   14    10      20  -> return last request 17 - 15 and 9 - 1
+    *   14    10,     0   -> simply return last requests on head (17-15)
+     */
     getHistory(request: APIFibonacciHistoryRequest): APIFibonacciHistoryResponse {
-        request.range.before;
-        const filtered = this.requests.filter ( r => (r.requestId > request.range.after || r.requestId < request.range.before));
-        return {history: filtered, resultCode: APIFibonacciResultCodes.OK};
+        // validation: head > tail
+        // validation: maxTailingRows < env.MaxRows.
+        // validation: if head or tail is zero, the other cannot be zero
+        // max tailing >= 0
+        // this could be helpful:
+        // https://betterprogramming.pub/nest-js-and-the-custom-validation-pipe-231130fda040
+
+        let headFilter = this.requests.filter(r => r.requestId > request.head);
+        let remaining = 0;
+        let tailFilter: APIFibonacciNumberMeta[] = [];
+        if (request.head == 0 && request.tail == 0) {
+            // head = tail = 0
+            headFilter = headFilter.slice(0, request.maxTailingRows);
+            remaining = this.requests.length - headFilter.length;
+        } else {
+            // always returns all new head requests, now determine tail
+            tailFilter = this.requests.filter(r => r.requestId < request.tail);
+            remaining = Math.max(tailFilter.length - request.maxTailingRows, 0);
+            tailFilter = tailFilter.slice(0, request.maxTailingRows);
+        }
+        const filtered = [...headFilter, ...tailFilter];
+        return {history: filtered, availableTail: remaining, resultCode: APIFibonacciResultCodes.OK};
     }
 }
 
@@ -130,4 +158,8 @@ const checkIsInt = (num: number): num is Int => num % 1 === 0;
 // helpers history
 function randomInt(n: number): string {
     return Math.floor(Math.random() * n).toString();
+}
+
+function self(array: []) {
+
 }
