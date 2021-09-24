@@ -159,7 +159,3 @@ const checkIsInt = (num: number): num is Int => num % 1 === 0;
 function randomInt(n: number): string {
     return Math.floor(Math.random() * n).toString();
 }
-
-function self(array: []) {
-
-}
